@@ -1,0 +1,25 @@
+# docker run -d --rm --name mongo -p 27017:27017 -v E:\volumenes-docker\mongodbdata:/data/db mongo
+version: "3.8"
+
+services:
+  postgres-db:
+    image: postgres:15.3
+    # restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgressdbdata:/var/lib/postgresql/data
+    ports:
+      ##PURTO LOCAL - PUERTO INTERNO
+      ## PARA MEJOR guardado basico ulid
+      - 5432:5432
+
+volumes:
+  postgressdbdata:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: E:/volumenes-docker/postgressdbdata

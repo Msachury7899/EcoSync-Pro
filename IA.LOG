@@ -1,0 +1,56 @@
+
+PROMPT 1
+
+usa la skill lean-output,
+necesito que en el proyecto backend nodejs siguiendo las reglas y usando las skill que corresponden
+- construyas el siguiente api feature
+Motor de Cálculo de CO2: API que transforme consumos en toneladas de $CO_2$ utilizando
+factores de conversión configurables.
+Aclaracion, en los casos de uso ademas del logger obligatorio se requiere
+- una feature ya sea mediante casos de uso o evento que
+haga lo siguiente genere un historial inmutable .
+
+* sugiereme la base de datos, antes de empezar;
+
+"Pensando en esto"
+
+La empresa EcoSync requiere un sistema de monitoreo de huella de carbono industrial. El reto
+consiste en desarrollar una plataforma donde las plantas de fabricación registren sus emisiones
+diarias. El sistema debe procesar estos datos, aplicar factores de conversión dinámicos y
+visualizar las métricas clave. Se busca una solución que demuestre preparación para la nube
+(Cloud Readiness) y capacidad de respuesta inmediata
+
+Registro de Emisiones: Formulario dinámico para ingresar consumo de combustible (Tipo,
+Cantidad, Unidad) con validaciones en tiempo real.
+2. Motor de Cálculo de CO2: API que transforme consumos en toneladas de $CO_2$ utilizando
+factores de conversión configurables.
+3. Dashboard de Cumplimiento: Gráfica dinámica (usando una librería de charts en Angular)
+que compare el consumo real contra un límite mensual establecido.
+4. Exportación y Auditoría: Funcionalidad para marcar registros como "Auditados" (cambio de
+estado) y visualización de un historial inmutable.
+
+
+
+-----------------------------------
+
+
+Propuesta de tablas:
+
+
+fuel_types          → catálogo de combustibles (diesel, gas natural, carbón…)
+emission_factors    → factor de conversión kgCO2/unidad por fuel_type (versionado + auditable)
+plants              → plantas de fabricación (nombre, límite mensual en tCO2)
+emission_records    → registro diario: planta + fuel_type + cantidad + unidad + tCO2 calculadas + estado (pending/audited)
+emission_record_history  → historial INMUTABLE (append-only): cada cambio de estado o recálculo genera una fila
+¿Por qué este esquema?
+
+emission_factors versionado permite cambiar el factor sin perder qué factor se usó al momento del registro (guardas factor_snapshot en emission_records).
+emission_record_history es append-only: nunca se hace UPDATE ni DELETE, solo INSERT — garantiza el historial inmutable exigido.
+plants con monthly_limit_tco2 habilita el dashboard de cumplimiento sin lógica extra.
+Relaciones:
+
+
+plants 1─n emission_records n─1 fuel_types
+                │
+                └─1:n emission_record_history
+emission_factors n─1 fuel_types (versionados por fecha efectiva)

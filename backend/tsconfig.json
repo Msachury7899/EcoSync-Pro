@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "./src",
+    "paths": {
+      "@core/*": [
+        "core/*"
+      ],
+      "@features/*": [
+        "features/*"
+      ],
+      "@db/*": [
+        "db/*"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/prisma/seed.ts",
+    "src/features/users/infraestructure/user.prisma-sqlite.ts",
+    "src/features/certifications/infraestructure/certification.prisma-sqlite.ts",
+    "src/features/certifications/infraestructure/certification-category.prisma-sqlite.ts",
+    "src/features/questions/infraestructure/question.prisma-sqlite.ts",
+    "src/features/exams/infraestructure/exam.prisma-sqlite.ts",
+    "src/features/exams/infraestructure/exam-question.prisma-sqlite.ts",
+    "src/features/attempts/infraestructure/attempt.prisma-sqlite.ts",
+    "src/features/attempts/infraestructure/attempt-answer.prisma-sqlite.ts"
+  ]
+}

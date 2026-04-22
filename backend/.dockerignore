@@ -1,0 +1,37 @@
+# Dependencies — reinstalled inside the container
+node_modules/
+
+# Environment files — secrets must come from host environment, not baked in
+.env
+.env.*
+*.env
+
+# Build output — produced inside the container by the Builder stage
+dist/
+
+# Development tooling
+*.log
+temp-*.log
+coverage/
+
+# Test files
+tests/
+jest.config.cjs
+tsconfig.test.json
+tsconfig.scripts.json
+
+# Version control
+.git/
+.gitignore
+
+# Editor / IDE metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# CI / local scripts not needed inside image
+Makefile
+docker-compose*.yml

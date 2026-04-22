@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\davi.Application\davi.Application.csproj" />
     <ProjectReference Include="..\davi.Infrastructure\davi.Infrastructure.csproj" />
+    <ProjectReference Include="..\davi.web-api\davi.web-api.csproj" />
   </ItemGroup>
 
 </Project>

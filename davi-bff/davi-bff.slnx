@@ -1,3 +1,7 @@
 <Solution>
   <Project Path="davi.web-api/davi.web-api.csproj" />
+  <Project Path="davi.Domain/davi.Domain.csproj" />
+  <Project Path="davi.Application/davi.Application.csproj" />
+  <Project Path="davi.Infrastructure/davi.Infrastructure.csproj" />
+  <Project Path="davi.Tests/davi.Tests.csproj" />
 </Solution>

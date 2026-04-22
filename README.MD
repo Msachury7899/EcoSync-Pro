@@ -14,5 +14,5 @@ Pasos para ejecutar la solucion
 
 # COMANDOS COVERAGE
  Engine:  npm run test:coverage
- BFF: ng test --no-watch --code-coverage
+ BFF: dotnet test davi-bff.slnx --collect:"XPlat Code Coverage" --results-directory ./TestResults
  Frontend: npm run 

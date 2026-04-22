@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  bffApiUrl: 'http://localhost:5000'
+  apiUrl: 'http://localhost:5034/api/v1',
+  useMocks: false,
 };

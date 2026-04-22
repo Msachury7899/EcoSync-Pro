@@ -65,7 +65,8 @@ echo "   -> davi-bff/davi.web-api/appsettings.Development.json"
 cat > "$FRONTEND_DIR/src/environments/environment.ts" << EOF
 export const environment = {
   production: false,
-  bffApiUrl: 'http://localhost:${BFF_PORT:-5000}'
+  apiUrl: 'http://localhost:${BFF_PORT:-5000}',
+  useMocks: false,
 };
 EOF
 echo "   -> frontend/src/environments/environment.ts"

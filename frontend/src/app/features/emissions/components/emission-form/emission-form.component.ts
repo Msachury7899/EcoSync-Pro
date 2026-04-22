@@ -26,10 +26,10 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
     SelectFieldComponent, FormControlComponent, FuelSelectorComponent,
   ],
   template: `
-    <div class="bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border)] p-6 shadow-sm">
-      <h2 class="text-base font-600 text-[var(--color-text-primary)] mb-4">Nuevo Registro de Emisión</h2>
+    <div class="bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border)] p-8 shadow-sm">
+      <h2 class="text-base font-600 text-[var(--color-text-primary)] mb-6">Nuevo Registro de Emisión</h2>
 
-      <form [formGroup]="formSvc.form" (ngSubmit)="onSubmit()" class="space-y-4">
+      <form [formGroup]="formSvc.form" (ngSubmit)="onSubmit()" class="space-y-6">
 
         <eco-form-control label="Planta" [required]="true" [control]="formSvc.form.get('plantId')">
           <eco-select formControlName="plantId" [options]="plantOptions()" placeholder="Seleccionar planta..."
@@ -52,7 +52,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
           <eco-input type="text" placeholder="Opcional..." formControlName="notes"/>
         </eco-form-control>
 
-        <div class="flex items-center gap-3 pt-2">
+        <div class="flex items-center gap-3 pt-4">
           <eco-button type="submit" variant="primary" [loading]="submitState() === 'loading'"
             [disabled]="formSvc.form.invalid">
             Registrar emisión

@@ -2,8 +2,7 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import { get } from 'env-var';
 
-const nodeEnv = process.env.NODE_ENV ?? 'local';
-config({ path: resolve(__dirname, `.env.${nodeEnv}`) });
+config({ path: resolve(__dirname, `.env`) });
 
 export const envs = {
     NODE_ENV: get('NODE_ENV').default('local').asEnum(['local', 'dev', 'qa', 'production', 'test']),

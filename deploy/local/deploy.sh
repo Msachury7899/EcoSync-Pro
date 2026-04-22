@@ -49,13 +49,13 @@ cd "$BFF_DIR" && dotnet restore davi-bff.slnx
 echo ""
 echo "[2/6] Replicando variables de entorno a los proyectos..."
 
-cat > "$ENGINE_DIR/.env.local" << EOF
+cat > "$ENGINE_DIR/.env" << EOF
 NODE_ENV=local
 PORT=${ENGINE_PORT:-3000}
 DATABASE_URL=${DATABASE_URL}
 CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5000,http://localhost:4200}
 EOF
-echo "   -> davi-engine-co2/.env.local"
+echo "   -> davi-engine-co2/.env"
 
 cat > "$BFF_DIR/davi.web-api/appsettings.Development.json" << EOF
 {
@@ -77,10 +77,10 @@ echo "   -> davi-bff/davi.web-api/appsettings.Development.json"
 echo ""
 echo "[3/6] Ejecutando migraciones Drizzle..."
 cd "$ENGINE_DIR"
-NODE_ENV=local npx drizzle-kit migrate
+npm run drizzle:migrate
 
 echo "   Ejecutando seeder..."
-NODE_ENV=local npx ts-node -r tsconfig-paths/register src/db/drizzle/seed.ts
+npm run drizzle:seed
 
 # [4/6] Coverage de tests
 echo ""

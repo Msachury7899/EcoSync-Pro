@@ -6,6 +6,8 @@ import compression from 'compression';
 import helmet from 'helmet';
 import cors from 'cors';
 
+import { envs } from '@core/envs';
+
 
 interface Options {
     port: number;
@@ -33,7 +35,11 @@ export class Server {
         this.configured = true;
 
         // * Middlewares
-        this.app.use(cors());
+        this.app.use(cors({
+            origin: envs.CORS_ORIGINS,
+            methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization'],
+        }));
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));// x-www-form-urlencoded
         this.app.use(compression());

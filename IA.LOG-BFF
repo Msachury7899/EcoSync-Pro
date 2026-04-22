@@ -1,0 +1,136 @@
+# IA_LOG — Registro de Decisiones con Asistencia de IA — BFF Layer
+
+> Este archivo documenta los prompts clave usados durante el diseño e implementación del **davi-bff** (.NET 8), junto con el razonamiento detrás de cada aceptación, rechazo o modificación de sugerencias generadas por IA, desde una perspectiva de rendimiento, seguridad y arquitectura.
+
+---
+
+## Cómo usar este log
+
+Cada entrada sigue la estructura:
+
+```
+## [PROMPT-NNN] — <título corto>
+**Fecha:** YYYY-MM-DD
+**Prompt:** descripción del prompt utilizado
+**Sugerencia IA:** qué generó o propuso la IA
+**Decisión:** ACEPTADO | RECHAZADO | MODIFICADO
+**Razón:** explicación técnica (rendimiento / seguridad / arquitectura / calidad)
+```
+
+---
+
+## [PROMPT-001] — Arquitectura Clean Architecture para davi-bff (.NET 8)
+
+**Fecha:** 2026-04-22
+
+**Prompt:**
+> "Tu misión es realizar la implementación de bff-api-endpoints. Inicialmente necesitamos usar clean arch con los siguientes puntos: se deben crear 3 bibliotecas de clases respectivamente domain, application, infraestructure. Debe estar estrictamente relacionada como clean arch dicta. Funciona por casos de uso. Se debe configurar una extensión o mecanismo .net para la conexión al api engine."
+
+**Sugerencia IA:**
+Estructura de 5 proyectos .NET:
+- `davi.Domain` — entidades + puertos (interfaces `IPort`)
+- `davi.Application` — DTOs + 14 use cases con patrón `ExecuteAsync`
+- `davi.Infrastructure` — adapters HTTP al engine + `IServiceCollection` extensions
+- `davi.web-api` — Composition Root (controllers + `Program.cs`)
+- `davi.Tests` — xUnit + Moq
+
+Regla de dependencias: `web-api → Application → Domain ← Infrastructure`.  
+Patrón de extensiones DI: `AddApplication()` y `AddInfrastructure(IConfiguration)` para mantener el `Program.cs` limpio.
+
+**Decisión:** ACEPTADO
+
+**Razón:**
+- **Arquitectura:** la separación en 3 bibliotecas de clases + API garantiza que ninguna capa conozca los detalles de implementación de la siguiente. `Domain` sin referencias externas asegura que el modelo de negocio no dependa de EF Core, HttpClient ni ningún framework. Esto permite testear los use cases en aislamiento total.
+- **Arquitectura:** el patrón `IPort` en `Domain` desacopla los use cases del proveedor concreto (HTTP vs. DB). Cambiar el origen de datos de un use case solo requiere registrar un adapter diferente en `Infrastructure` sin tocar `Application`.
+- **Calidad:** usar `IServiceCollection` extensions (`AddApplication`, `AddInfrastructure`) centraliza el registro de dependencias y evita que `Program.cs` crezca con lógica de wiring. Mejora la mantenibilidad del Composition Root.
+
+---
+
+## [PROMPT-002] — Generación del plan de implementación con checklist por fases
+
+**Fecha:** 2026-04-22
+
+**Prompt:**
+> "Antes de implementar necesito que crees en la carpeta docs el plan para su corrección."
+
+**Sugerencia IA:**
+Documento `docs/bff-clean-arch-implementation-plan.md` con 5 fases:
+- Fase 0: Scaffolding (proyectos, referencias, paquetes NuGet)
+- Fase 1: Domain (entidades + puertos)
+- Fase 2: Application (DTOs + use cases + extensions)
+- Fase 3: Infrastructure (adapters + extensions)
+- Fase 4: WebAPI (controllers + Program.cs)
+- Fase 5: Tests xUnit (Moq por use case)
+
+Cada fase incluye checklist accionable, estructura de carpetas y criterio de corrección (`dotnet build → 0 Error(s)`, `dotnet test → All passed`).
+
+**Decisión:** ACEPTADO
+
+**Razón:**
+- **Calidad:** documentar el plan antes de implementar reduce la deuda técnica por decisiones improvisadas. El checklist por fase permite verificar que cada capa compila de forma independiente antes de integrar la siguiente, detectando errores de diseño temprano.
+- **Arquitectura:** el orden de fases respeta la dirección de dependencias de Clean Arch: se implementa `Domain` primero (sin dependencias), luego `Application` (que solo conoce `Domain`), y finalmente `Infrastructure` (que cierra el círculo implementando los puertos).
+
+---
+
+## [PROMPT-003] — Adición de PostgreSQL con patrón Repository + Adapter
+
+**Fecha:** 2026-04-22
+
+**Prompt:**
+> "A esta implementación añádele que usaremos PostgreSQL, pero se debe pensar en repository y adapter por si requiero cambiar de proveedor de DB."
+
+**Sugerencia IA:**
+Separación de dos niveles de abstracción en `Domain`:
+- `IPort` — contrato de caso de uso (ya existía). `Application` lo consume.
+- `IRepository` (nuevo) — contrato de acceso a datos. Solo `Infrastructure` lo consume internamente.
+
+Nuevos artefactos en `Infrastructure`:
+- `Persistence/BffDbContext` — DbContext EF Core con Npgsql
+- `Persistence/Configurations/PlantConfiguration` — `IEntityTypeConfiguration<Plant>`
+- `Repositories/PlantPostgresRepository : IPlantRepository`
+- `Repositories/DashboardPostgresRepository : IDashboardRepository`
+
+Los adapters `PlantAdapter` y `DashboardAdapter` delegan a `IRepository` (DB directa) en lugar de HTTP al engine, ya que el engine no expone endpoints para plantas ni para agregaciones de dashboard.
+
+**Decisión:** ACEPTADO
+
+**Razón:**
+- **Arquitectura:** la doble abstracción `IPort` / `IRepository` es el patrón correcto para separar *qué hace el negocio* de *cómo se persisten los datos*. Si en el futuro se reemplaza EF Core + Npgsql por Dapper o MongoDB, solo se reemplazan `PlantPostgresRepository` y `DashboardPostgresRepository`. `Application` y `Domain` no se tocan.
+- **Rendimiento:** las agregaciones de dashboard (cumplimiento mensual, tendencia diaria, breakdown por combustible) se ejecutan directamente sobre la DB del BFF con queries EF Core optimizadas (`AsNoTracking`, agrupaciones) en lugar de traer todos los registros del engine por HTTP y agregar en memoria. Esto reduce la latencia y el tráfico entre servicios.
+- **Seguridad:** usar `AsNoTracking()` en todos los queries de lectura evita que EF Core rastree entidades innecesariamente, reduciendo la superficie de cambios accidentales en datos de solo lectura (OWASP A04 - Insecure Design — principio de mínimo privilegio aplicado al ORM).
+
+---
+
+## [PROMPT-004] — Variables de entorno y archivo appsettings.example.json
+
+**Fecha:** 2026-04-22
+
+**Prompt:**
+> "Listo añade por favor la configuración de variables de entorno, y espero no hayas quitado lo del proxy del engine. Identifica esas variables de entorno para dejarlas en un archivo example de guía."
+
+**Sugerencia IA:**
+1. Nueva sección en el plan: tabla de variables de entorno con nombre, si es obligatoria, valor por defecto y descripción. Convención .NET de `__` como separador de sección.
+2. Separación de archivos de configuración:
+   - `appsettings.json` — valores vacíos (se commitea, sin credenciales)
+   - `appsettings.Development.json` — valores locales (en `.gitignore`)
+   - `appsettings.example.json` — guía con placeholders (se commitea)
+3. Variables identificadas: `ASPNETCORE_ENVIRONMENT`, `ASPNETCORE_URLS`, `ConnectionStrings__Postgres`, `Engine__BaseUrl`, `Engine__TimeoutSeconds`.
+4. Ejemplos de inyección para Docker Compose y GitHub Actions.
+
+**Decisión:** ACEPTADO
+
+**Razón:**
+- **Seguridad:** nunca commitear credenciales en `appsettings.json` es el control directo contra OWASP A02 - Cryptographic Failures y A07 - Identification and Authentication Failures. Separar `appsettings.Development.json` en `.gitignore` elimina la posibilidad de que contraseñas de DB lleguen al repositorio por accidente.
+- **Seguridad:** usar variables de entorno para credenciales en CI/CD (`${{ secrets.POSTGRES_CONNECTION_STRING }}`) sigue el principio de secretos como runtime-injected, no como configuración estática. Referencia OWASP A05 - Security Misconfiguration.
+- **Arquitectura:** `appsettings.example.json` sirve como contrato de onboarding: cualquier desarrollador nuevo sabe exactamente qué variables necesita configurar sin necesidad de leer el código fuente de `InfrastructureExtensions`.
+- **Calidad:** `Engine__TimeoutSeconds` como variable configurable permite ajustar el timeout del proxy HTTP al engine por entorno (desarrollo: 30s, producción: 10s) sin recompilar.
+
+---
+
+## Pendientes
+
+| ID | Decisión relacionada | Ítem de seguimiento |
+|---|---|---|
+| P-001 | PROMPT-003 | Evaluar `Testcontainers.PostgreSql` para tests de integración de repositorios en CI/CD |
+| P-002 | PROMPT-004 | Agregar `appsettings.Development.json` explícitamente al `.gitignore` del proyecto `davi.web-api` |
+| P-003 | PROMPT-001 | Verificar que `davi.Domain` no tenga referencias a ningún paquete NuGet externo (compilación aislada) |

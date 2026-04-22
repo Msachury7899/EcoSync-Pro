@@ -1,0 +1,48 @@
+# IA_LOG — Registro de Decisiones con Asistencia de IA — Engine Layer
+
+> Este archivo documenta los prompts clave usados durante el diseño e implementación del **davi-engine-co2** (Node.js + TypeScript + Drizzle), junto con el razonamiento detrás de cada aceptación, rechazo o modificación de sugerencias generadas por IA, desde una perspectiva de rendimiento, seguridad y arquitectura.
+
+---
+
+## Cómo usar este log
+
+Cada entrada sigue la estructura:
+
+```
+## [PROMPT-NNN] — <título corto>
+**Fecha:** YYYY-MM-DD
+**Prompt:** descripción del prompt utilizado
+**Sugerencia IA:** qué generó o propuso la IA
+**Decisión:** ACEPTADO | RECHAZADO | MODIFICADO
+**Razón:** explicación técnica (rendimiento / seguridad / arquitectura / calidad)
+```
+
+---
+
+## [PROMPT-001] — Seeder de base de datos para visualización de gráficas
+
+**Fecha:** 2026-04-22
+
+**Prompt:**
+> "Este sera facil necesito que con schema.ts veas lo que hay y con en seed.ts crees un seeder con muchos registros, para que se pueda visualizar bien bonito, no ejecutes comando de drizzle solo encárgate de crear el seeder."
+> *(Seguimiento):* "De pronto más registros de emisión para que se vean las gráficas."
+
+**Sugerencia IA:**
+`seed.ts` completo con inserción secuencial respetando FK:
+1. **10 fuel types** con nombres y descripciones reales (Diesel B5, GNC, GLP, Carbón Mineral, etc.).
+2. **20 emission factors** (2 por combustible: histórico hace 2 años + actual hace 1 año).
+3. **7 plants** en ciudades colombianas con `monthlyLimitTco2` diferente por planta.
+4. **~180 emission records** — distribución controlada: 13–17 registros × 12 meses, rotando todos los combustibles por mes (`r % emissionFactorRows.length`) para garantizar series completas en gráficas.
+5. **~250–270 entradas de historial** con transiciones de estado `pending → approved | rejected` y `changedBy` con usuarios ficticios.
+
+Helpers usados: `daysAgo()`, `randomBetween()`, `pickRandom()`.
+
+**Decisión:** ACEPTADO
+
+**Razón:**
+- **Rendimiento / Calidad de visualización:** la distribución controlada por meses (en lugar de `Math.random() * 365`) garantiza que cada serie temporal en gráficas de área/barras tenga al menos 1 punto por mes sin huecos. Con datos aleatorios sin estructura podría haber meses sin registros, rompiendo la continuidad visual de las gráficas del dashboard.
+- **Arquitectura:** la rotación `r % emissionFactorRows.length` en el loop mensual cubre los 10 combustibles de forma uniforme, asegurando que el Donut Chart de breakdown por combustible tenga proporciones visibles para todas las categorías, no solo las más frecuentes.
+- **Calidad:** el orden de inserción (`fuelTypes → emissionFactors → plants → emissionRecords → emissionRecordHistory`) respeta las foreign keys del schema, evitando errores de integridad referencial al correr el seed en cualquier base limpia. El seeder cierra la conexión explícitamente con `sql.end()` para evitar conexiones colgadas.
+- **Seguridad:** los `changedBy` usan correos ficticios del dominio del proyecto (`@ecosync.co`), sin datos personales reales ni credenciales hardcodeadas (OWASP A02 - Cryptographic Failures / no secret leakage en seeds de desarrollo).
+
+---

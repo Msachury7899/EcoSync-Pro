@@ -1,11 +1,10 @@
 import {
   Component, Output, EventEmitter, OnInit, signal, computed, ChangeDetectionStrategy, inject
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { SelectFieldComponent, SelectOption } from '../../atoms/select-field/select-field.component';
 import { FormControlComponent } from '../form-control/form-control.component';
-import { environment } from '../../../../../environments/environment';
+import { FuelTypesApiService } from '../../../../core/services/fuel-types-api.service';
 
 export interface FuelType { id: string; name: string; units: string[]; }
 export interface FuelSelection { fuelTypeId: string; unit: string; }
@@ -38,7 +37,7 @@ export interface FuelSelection { fuelTypeId: string; unit: string; }
 export class FuelSelectorComponent implements OnInit {
   @Output() fuelSelected = new EventEmitter<FuelSelection>();
 
-  private readonly http = inject(HttpClient);
+  private readonly fuelTypesApi = inject(FuelTypesApiService);
 
   private readonly fuelTypes = signal<FuelType[]>([]);
   private readonly selectedFuelId = signal<string>('');
@@ -54,7 +53,7 @@ export class FuelSelectorComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.http.get<FuelType[]>(`${environment.apiUrl}/fuel-types`).subscribe({
+    this.fuelTypesApi.getFuelTypes().subscribe({
       next: data => this.fuelTypes.set(data),
       error: () => this.fuelTypes.set([]),
     });

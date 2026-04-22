@@ -1,8 +1,7 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { PlantSelectorService, Plant } from '../../../../core/services/plant-selector.service';
-import { environment } from '../../../../../environments/environment';
+import { PlantsApiService } from '../../../../core/services/plants-api.service';
 
 @Component({
   selector: 'eco-plant-selector',
@@ -30,11 +29,11 @@ import { environment } from '../../../../../environments/environment';
 })
 export class PlantSelectorComponent implements OnInit {
   protected readonly plantSelector = inject(PlantSelectorService);
-  private readonly http = inject(HttpClient);
+  private readonly plantsApi = inject(PlantsApiService);
   protected readonly plants = signal<Plant[]>([]);
 
   ngOnInit(): void {
-    this.http.get<Plant[]>(`${environment.apiUrl}/plants`).subscribe({
+    this.plantsApi.getPlants().subscribe({
       next: data => this.plants.set(data),
       error: () => this.plants.set([]),
     });

@@ -16,6 +16,19 @@ services:
       ## PARA MEJOR guardado basico ulid
       - 5432:5432
 
+  davi-engine-co2:
+    build:
+      context: ../../davi-engine-co2
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: ${NODE_ENV:-dev}
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres-db
+
 volumes:
   postgressdbdata:
     driver: local

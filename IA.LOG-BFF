@@ -127,10 +127,62 @@ Los adapters `PlantAdapter` y `DashboardAdapter` delegan a `IRepository` (DB dir
 
 ---
 
+## [PROMPT-005] — Tests de use cases con Moq por capa (FASE 5)
+
+**Fecha:** 2026-04-22
+
+**Prompt:**
+> "Continuación de FASE 5: crear los test files pendientes para EmissionRecords (GetHistory, Export), Dashboard (GetCompliance, GetTrend, GetFuelBreakdown, GetSummary) y ejecutar la suite completa."
+
+**Sugerencia IA:**
+8 archivos de test xUnit con el patrón `Mock<IPort> → Setup → ExecuteAsync → Assert → Verify`:
+- `GetEmissionRecordHistoryUseCaseTests` — verifica que `GetHistoryAsync(id)` retorna la lista con los actions correctos.
+- `ExportEmissionRecordsUseCaseTests` — verifica `ContentType`, `Content` no vacío y `FileName`.
+- `GetComplianceUseCaseTests` — verifica los estados `ok`, `warning`, `exceeded` en los meses.
+- `GetTrendUseCaseTests` — verifica agrupación diaria con tco2 correcto.
+- `GetFuelBreakdownUseCaseTests` — verifica dos fuel types y que los porcentajes sumen ~100.
+- `GetSummaryUseCaseTests` — verifica `PercentOfLimit`, `Status` y `TotalRecords`.
+
+Todos los tests usan `Times.Once` en `Verify` para garantizar que el use case invoca el port exactamente una vez.
+
+**Decisión:** ACEPTADO
+
+**Razón:**
+- **Calidad:** el patrón `Mock<IPort>.Setup(...).ReturnsAsync(...)` aisla completamente el use case del adapter concreto. Los tests validan el comportamiento del use case sin dependencias de red ni DB, lo que los hace deterministas y ejecutables offline.
+- **Arquitectura:** usar `Times.Once` en cada `Verify` asegura que el use case no invoca el port más veces de las necesarias. Esto previene N+1 de llamadas HTTP al engine o a la DB en flujos que no deberían necesitarlas.
+- **Calidad:** la cobertura de los 4 endpoints del dashboard con asserts sobre campos de negocio (`Status = "exceeded"`, suma de porcentajes ~100) detecta regresiones si la lógica de cálculo en los adapters se rompe.
+
+---
+
+## [PROMPT-006] — Tests de repositorios con EF Core InMemory
+
+**Fecha:** 2026-04-22
+
+**Prompt:**
+> "Crear los tests de repositorios `PlantPostgresRepositoryTests` y `DashboardPostgresRepositoryTests` usando EF Core InMemory para evitar dependencia de PostgreSQL en la suite de tests."
+
+**Sugerencia IA:**
+2 archivos de test con `DbContextOptionsBuilder<BffDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString())`:
+- `PlantPostgresRepositoryTests` — 3 tests: `GetAllAsync` retorna todos, `GetByIdAsync` retorna el correcto, `GetByIdAsync` retorna null cuando no existe.
+- `DashboardPostgresRepositoryTests` — 4 tests: `GetMonthlyTco2Async` suma solo el mes correcto, `GetDailyTco2Async` agrupa por día, `GetFuelBreakdownAsync` agrupa por fuel type con tco2 correcto, `GetRecordCountAsync` cuenta solo el mes y planta dados.
+
+Cada test usa un `Guid.NewGuid()` como nombre de la base InMemory para garantizar aislamiento total entre tests.
+
+**Decisión:** ACEPTADO
+
+**Razón:**
+- **Rendimiento:** `UseInMemoryDatabase` elimina la dependencia de un servidor PostgreSQL externo en CI/CD. Los tests de repositorio se ejecutan en memoria en milisegundos, sin cold start de contenedor ni latencia de red.
+- **Calidad:** usar un `Guid` distinto por test evita estado compartido entre tests paralelos (test pollution). Esto garantiza resultados deterministas incluso con `dotnet test --parallel`.
+- **Arquitectura:** los tests de repositorio validan la lógica de queries EF Core (agrupaciones, filtros por mes, joins con `FuelTypes`) de forma independiente a los tests de use case. Esto separa claramente dos capas de verificación: comportamiento de negocio (use cases con Moq) vs. lógica de acceso a datos (repositorios con InMemory).
+- **Pendiente relacionado:** P-001 — para CI/CD con datos reales se recomienda migrar a `Testcontainers.PostgreSql` para detectar incompatibilidades de queries que InMemory no captura (ej. funciones SQL nativas de Postgres).
+
+---
+
 ## Pendientes
 
 | ID | Decisión relacionada | Ítem de seguimiento |
 |---|---|---|
-| P-001 | PROMPT-003 | Evaluar `Testcontainers.PostgreSql` para tests de integración de repositorios en CI/CD |
+| P-001 | PROMPT-003 / PROMPT-006 | Evaluar `Testcontainers.PostgreSql` para tests de integración de repositorios en CI/CD |
 | P-002 | PROMPT-004 | Agregar `appsettings.Development.json` explícitamente al `.gitignore` del proyecto `davi.web-api` |
 | P-003 | PROMPT-001 | Verificar que `davi.Domain` no tenga referencias a ningún paquete NuGet externo (compilación aislada) |
+| P-004 | PROMPT-006 | `DashboardPostgresRepositoryTests` — los tests de `GetMonthlyTco2Async` y `GetRecordCountAsync` ignoran el `plantId` porque los seeds no lo incluyen; ajustar cuando la entidad `EmissionRecord` tenga FK de planta en DB |

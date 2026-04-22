@@ -54,3 +54,51 @@ plants 1─n emission_records n─1 fuel_types
                 │
                 └─1:n emission_record_history
 emission_factors n─1 fuel_types (versionados por fecha efectiva)
+
+
+
+
+
+
+
+
+PROMPT 2
+
+Usa la skill ux-ui-pro para lo siguiente:
+
+
+Contexto del proyecto:
+
+"La empresa EcoSync requiere un sistema de monitoreo de huella de carbono industrial. El reto consiste en desarrollar una plataforma donde las plantas de fabricación registren sus emisiones diarias. El sistema debe procesar estos datos, aplicar factores de conversión dinámicos y visualizar las métricas clave."
+
+
+Detalle actual frontend
+En la carpeta frontend se encuentra un proyecto angular con tailwind,
+aunque no esta estructurado te puedo dar lo siguiente,
+-  usa atomic design 
+- es un proyecto basico de feature
+- usa inyecciones de dependencia para los servicios mediante providers
+
+Lo que espero:
+Despues de que identifiques y hayamos quedado conforme con las leyes y estructura.
+
+Espero estos features
+1. Registro de Emisiones: Formulario dinámico para ingresar consumo de combustible (Tipo, Cantidad, Unidad) con validaciones en tiempo real. 
+2. Motor de Cálculo de CO2: API que transforme consumos en toneladas de $CO_2$ utilizando factores de conversión configurables. 
+3. Dashboard de Cumplimiento: Gráfica dinámica (usando una librería de charts en Angular) que compare el consumo real contra un límite mensual establecido. 
+4. Exportación y Auditoría: Funcionalidad para marcar registros como "Auditados" (cambio de estado) y visualización de un historial inmutable. (la funcionalidad de exportacion simplemente debe ser llamada, se hara en backend)
+
+
+
+antes de que ejecutes necesito que crees una carpeta docs y ahi pongas el plan de implementacion para su respectiva aprobacion.
+
+
+Archivo docs/frontend_implementacion.md
+
+
+en este momento no se requiere autenticacion, 
+ligh mode nomas
+sidebar colapsable
+el selector si debe estar
+
+ademas de esto necesito un checklist con todo lo que vas ha implementar,y colocalo en el otro documento llamado ...-revisado y ajustado
